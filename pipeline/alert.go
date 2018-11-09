@@ -33,7 +33,7 @@ type AlertNode struct{ *AlertNodeData }
 // See AlertNode.Info, AlertNode.Warn, and AlertNode.Crit below.
 //
 // Different event handlers can be configured for each AlertNode.
-// Some handlers like Email, HipChat, Sensu, Slack, OpsGenie, VictorOps, PagerDuty, Telegram and Talk have a configuration
+// Some handlers like Email, HipChat, Sensu, Slack, OpsGenie, VictorOps, PagerDuty, PagerTree, Telegram and Talk have a configuration
 // option 'global' that indicates that all alerts implicitly use the handler.
 //
 // Available event handlers:
@@ -51,6 +51,7 @@ type AlertNode struct{ *AlertNodeData }
 //    * OpsGenie -- Send alert to OpsGenie.
 //    * VictorOps -- Send alert to VictorOps.
 //    * PagerDuty -- Send alert to PagerDuty.
+//    * PagerTree -- Send alert to PagerTree.
 //    * Pushover -- Send alert to Pushover.
 //    * Talk -- Post alert message to Talk client.
 //    * Telegram -- Post alert message to Telegram client.
@@ -337,6 +338,10 @@ type AlertNodeData struct {
 	// Send alert to PagerDuty API v2.
 	// tick:ignore
 	PagerDuty2Handlers []*PagerDuty2Handler `tick:"PagerDuty2" json:"pagerDuty2"`
+
+  // Send alert to PagerTree.
+	// tick:ignore
+	PagerTreeHandlers []*PagerTreeHandler `tick:"PagerTree" json:"pagerTree"`
 
 	// Send alert to Pushover.
 	// tick:ignore
@@ -1030,6 +1035,56 @@ func (pd2 *PagerDuty2Handler) ServiceKey(serviceKey string) *PagerDuty2Handler {
 	pd2.RoutingKey = serviceKey
 	return pd2
 }
+
+// Send the alert to PagerTree
+//
+// Example:
+//    [pagertree]
+//      enabled = true
+//
+// With the correct configuration you can now use PagerTree in TICKscripts.
+//
+// Example:
+//    stream
+//         |alert()
+//             .pagerTree()
+//
+// If the 'pagertree' section in the configuration has the option: global = true
+// then all alerts are sent to PagerTree without the need to explicitly state it
+// in the TICKscript.
+//
+// Example:
+//    [pagertree]
+//      enabled = true
+//      routing-key = "xxxxxxxxx"
+//      global = true
+//
+// Example:
+//    stream
+//         |alert()
+//
+// Send alert to PagerTree
+// tick:property
+func (n *AlertNodeData) PagerTree() *PagerTreeHandler {
+	pt := &PagerTreeHandler{
+		AlertNodeData: n,
+	}
+	n.PagerTreeHandlers = append(n.PagerTreeHandlers, pt)
+	return pt
+}
+
+// tick:embedded:AlertNode.PagerTree
+type PagerTree struct {
+	*AlertNodeData `json:"-"`
+
+	// The routing key to use for the alert.
+	// Defaults to the value in the configuration if empty.
+	RoutingKey string `json:"routingKey"`
+
+	// tick:ignore
+	_ string `tick:"ServiceKey"`
+}
+
 
 // Send the alert to HipChat.
 // For step-by-step instructions on setting up Kapacitor with HipChat, see the [Event Handler Setup Guide](https://docs.influxdata.com//kapacitor/latest/guides/event-handler-setup/#hipchat-setup).

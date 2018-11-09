@@ -123,6 +123,11 @@ func (n *AlertNode) Build(a *pipeline.AlertNode) (ast.Node, error) {
 			Dot("routingKey", h.RoutingKey)
 	}
 
+  for _, h := range a.PagerTreeHandlers {
+    n.Dot("pagerTree").
+      Dot("routingKey", h.RoutingKey)
+  }
+
 	for _, h := range a.PushoverHandlers {
 		n.Dot("pushover").
 			Dot("userKey", h.UserKey).

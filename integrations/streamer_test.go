@@ -56,6 +56,8 @@ import (
 	"github.com/influxdata/kapacitor/services/pagerduty/pagerdutytest"
 	"github.com/influxdata/kapacitor/services/pagerduty2"
 	"github.com/influxdata/kapacitor/services/pagerduty2/pagerduty2test"
+  "github.com/influxdata/kapacitor/services/pagertree"
+	"github.com/influxdata/kapacitor/services/pagertree/pagertreetest"
 	"github.com/influxdata/kapacitor/services/pushover"
 	"github.com/influxdata/kapacitor/services/pushover/pushovertest"
 	"github.com/influxdata/kapacitor/services/sensu"
@@ -9515,6 +9517,91 @@ stream
 					Timestamp:     "1971-01-01T00:00:10.000000000Z",
 				},
 				RoutingKey: "test_override_key",
+			},
+		},
+	}
+
+	ts.Close()
+	var got []interface{}
+	for _, g := range ts.Requests() {
+		got = append(got, g)
+	}
+
+	if err := compareListIgnoreOrder(got, exp, nil); err != nil {
+		t.Error(err)
+	}
+}
+
+func TestStream_AlertPagerTree(t *testing.T) {
+	ts := pagertreetest.NewServer()
+	defer ts.Close()
+
+	defaultDetailsTmpl := `{"Name":"cpu","TaskName":"TestStream_Alert","Group":"host=serverA","Tags":{"host":"serverA"},"ServerInfo":{"Hostname":"%v","ClusterID":"%v","ServerID":"%v"},"ID":"kapacitor/cpu/serverA","Fields":{"count":10},"Level":"CRITICAL","Time":"1971-01-01T00:00:10Z","Duration":0,"Message":"CRITICAL alert for kapacitor/cpu/serverA"}
+`
+	var defaultDetails string
+
+	var script = `
+stream
+	|from()
+		.measurement('cpu')
+		.where(lambda: "host" == 'serverA')
+		.groupBy('host')
+	|window()
+		.period(10s)
+		.every(10s)
+	|count('value')
+	|alert()
+		.id('kapacitor/{{ .Name }}/{{ index .Tags "host" }}')
+		.message('{{ .Level }} alert for {{ .ID }}')
+		.info(lambda: "count" > 6.0)
+		.warn(lambda: "count" > 7.0)
+		.crit(lambda: "count" > 8.0)
+		.pagerTree()
+		.pagerTree()
+			.serviceKey('test_override_key')
+`
+
+	var kapacitorURL string
+	tmInit := func(tm *kapacitor.TaskMaster) {
+		si := tm.ServerInfo
+		defaultDetails = fmt.Sprintf(defaultDetailsTmpl,
+			si.Hostname(),
+			si.ClusterID(),
+			si.ServerID(),
+		)
+		c := pagertree.NewConfig()
+		c.Enabled = true
+		c.URL = ts.URL
+		c.ServiceKey = "service_key"
+		pt := pagertree.NewService(c, diagService.NewPagerTreeHandler())
+		pt.HTTPDService = tm.HTTPDService
+		tm.PagerTreeService = pt
+
+		kapacitorURL = tm.HTTPDService.URL()
+	}
+	testStreamerNoOutput(t, "TestStream_Alert", script, 13*time.Second, tmInit)
+
+	exp := []interface{}{
+		pagertreetest.Request{
+			URL: "/",
+			PostData: pagertreetest.PostData{
+				ServiceKey:  "service_key",
+				EventType:   "trigger",
+				Description: "CRITICAL alert for kapacitor/cpu/serverA",
+				Client:      "kapacitor",
+				ClientURL:   kapacitorURL,
+				Details:     html.EscapeString(defaultDetails),
+			},
+		},
+		pagertreetest.Request{
+			URL: "/",
+			PostData: pagertreetest.PostData{
+				ServiceKey:  "test_override_key",
+				EventType:   "trigger",
+				Description: "CRITICAL alert for kapacitor/cpu/serverA",
+				Client:      "kapacitor",
+				ClientURL:   kapacitorURL,
+				Details:     html.EscapeString(defaultDetails),
 			},
 		},
 	}

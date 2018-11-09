@@ -197,6 +197,7 @@ func TestAlertTCPJSON(t *testing.T) {
         "victorOps": null,
         "pagerDuty": null,
         "pagerDuty2": null,
+        "pagerTree": null,
         "pushover": null,
         "sensu": null,
         "slack": null,
@@ -342,6 +343,23 @@ func TestAlertPagerDuty2_ServiceKey(t *testing.T) {
         .history(21)
         .pagerDuty2()
         .routingKey('LeafsNation')
+`
+	PipelineTickTestHelper(t, pipe, want)
+}
+
+func TestAlertPagerTree(t *testing.T) {
+	pipe, _, from := StreamFrom()
+	handler := from.Alert().PagerTree()
+
+	want := `stream
+    |from()
+    |alert()
+        .id('{{ .Name }}:{{ .Group }}')
+        .message('{{ .ID }} is {{ .Level }}')
+        .details('{{ json . }}')
+        .history(21)
+        .pagerTree()
+        .serviceKey('Seatec Astronomy')
 `
 	PipelineTickTestHelper(t, pipe, want)
 }

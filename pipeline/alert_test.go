@@ -68,6 +68,7 @@ func TestAlertNode_MarshalJSON(t *testing.T) {
     "victorOps": null,
     "pagerDuty": null,
     "pagerDuty2": null,
+    "pagerTree": null,
     "pushover": null,
     "sensu": null,
     "slack": null,

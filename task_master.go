@@ -30,6 +30,7 @@ import (
 	"github.com/influxdata/kapacitor/services/opsgenie2"
 	"github.com/influxdata/kapacitor/services/pagerduty"
 	"github.com/influxdata/kapacitor/services/pagerduty2"
+  "github.com/influxdata/kapacitor/services/pagertree"
 	"github.com/influxdata/kapacitor/services/pushover"
 	"github.com/influxdata/kapacitor/services/sensu"
 	"github.com/influxdata/kapacitor/services/sideload"
@@ -141,6 +142,10 @@ type TaskMaster struct {
 	PagerDuty2Service interface {
 		Global() bool
 		Handler(pagerduty2.HandlerConfig, ...keyvalue.T) alert.Handler
+	}
+  PagerTreeService interface {
+		Global() bool
+		Handler(pagertree.HandlerConfig, ...keyvalue.T) alert.Handler
 	}
 	PushoverService interface {
 		Handler(pushover.HandlerConfig, ...keyvalue.T) alert.Handler

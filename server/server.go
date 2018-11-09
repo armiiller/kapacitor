@@ -47,6 +47,7 @@ import (
 	"github.com/influxdata/kapacitor/services/opsgenie2"
 	"github.com/influxdata/kapacitor/services/pagerduty"
 	"github.com/influxdata/kapacitor/services/pagerduty2"
+  "github.com/influxdata/kapacitor/services/pagertree"
 	"github.com/influxdata/kapacitor/services/pushover"
 	"github.com/influxdata/kapacitor/services/replay"
 	"github.com/influxdata/kapacitor/services/reporting"
@@ -238,6 +239,7 @@ func New(c *Config, buildInfo BuildInfo, diagService *diagnostic.Service) (*Serv
 	s.appendOpsGenie2Service()
 	s.appendPagerDutyService()
 	s.appendPagerDuty2Service()
+  s.appendPagerTreeService()
 	s.appendPushoverService()
 	if err := s.appendHTTPPostService(); err != nil {
 		return nil, errors.Wrap(err, "httppost service")
@@ -639,6 +641,19 @@ func (s *Server) appendPagerDuty2Service() {
 
 	s.SetDynamicService("pagerduty2", srv)
 	s.AppendService("pagerduty2", srv)
+}
+
+func (s *Server) appendPagerTreeService() {
+	c := s.config.PagerTree
+	d := s.DiagService.NewPagerTreeHandler()
+	srv := pagertree.NewService(c, d)
+	srv.HTTPDService = s.HTTPDService
+
+	s.TaskMaster.PagerTreeService = srv
+	s.AlertService.PagerTreeService = srv
+
+	s.SetDynamicService("pagertree", srv)
+	s.AppendService("pagertree", srv)
 }
 
 func (s *Server) appendPushoverService() {

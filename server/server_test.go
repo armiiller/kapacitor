@@ -52,6 +52,8 @@ import (
 	"github.com/influxdata/kapacitor/services/pagerduty/pagerdutytest"
 	"github.com/influxdata/kapacitor/services/pagerduty2"
 	"github.com/influxdata/kapacitor/services/pagerduty2/pagerduty2test"
+  "github.com/influxdata/kapacitor/services/pagertree"
+	"github.com/influxdata/kapacitor/services/pagertree/pagertreetest"
 	"github.com/influxdata/kapacitor/services/pushover/pushovertest"
 	"github.com/influxdata/kapacitor/services/sensu/sensutest"
 	"github.com/influxdata/kapacitor/services/slack"
@@ -7509,6 +7511,76 @@ func TestServer_UpdateConfig(t *testing.T) {
 				},
 			},
 		},
+    {
+			section: "pagertree",
+			setDefaults: func(c *server.Config) {
+				c.PagerTree.RoutingKey = "secret"
+			},
+			expDefaultSection: client.ConfigSection{
+				Link: client.Link{Relation: client.Self, Href: "/kapacitor/v1/config/pagertree"},
+				Elements: []client.ConfigElement{{
+					Link: client.Link{Relation: client.Self, Href: "/kapacitor/v1/config/pagertree/"},
+					Options: map[string]interface{}{
+						"enabled":     false,
+						"global":      false,
+						"routing-key": true,
+						"url":         pagertree.DefaultPagerTreeAPIURL,
+					},
+					Redacted: []string{
+						"routing-key",
+					},
+				}},
+			},
+			expDefaultElement: client.ConfigElement{
+				Link: client.Link{Relation: client.Self, Href: "/kapacitor/v1/config/pagertree/"},
+				Options: map[string]interface{}{
+					"enabled":     false,
+					"global":      false,
+					"routing-key": true,
+					"url":         pagertree.DefaultPagerTreeAPIURL,
+				},
+				Redacted: []string{
+					"routing-key",
+				},
+			},
+			updates: []updateAction{
+				{
+					updateAction: client.ConfigUpdateAction{
+						Set: map[string]interface{}{
+							"routing-key": "",
+							"enabled":     true,
+						},
+					},
+					expSection: client.ConfigSection{
+						Link: client.Link{Relation: client.Self, Href: "/kapacitor/v1/config/pagertree"},
+						Elements: []client.ConfigElement{{
+							Link: client.Link{Relation: client.Self, Href: "/kapacitor/v1/config/pagertree/"},
+							Options: map[string]interface{}{
+								"enabled":     true,
+								"global":      false,
+								"routing-key": false,
+								"url":         pagertree.DefaultPagerTreeAPIURL,
+							},
+							Redacted: []string{
+								"routing-key",
+							},
+						}},
+					},
+					expElement: client.ConfigElement{
+						Link: client.Link{Relation: client.Self, Href: "/kapacitor/v1/config/pagertree/"},
+						Options: map[string]interface{}{
+							"enabled":     true,
+							"global":      false,
+							"routing-key": false,
+							"url":         pagertree.DefaultPagerTreeAPIURL,
+						},
+						Redacted: []string{
+							"routing-key",
+						},
+					},
+				},
+			},
+		},
 		{
 			section: "smtp",
 			setDefaults: func(c *server.Config) {
@@ -9146,6 +9218,14 @@ func TestServer_DoServiceTest(t *testing.T) {
 				Message: "service is not enabled",
 			},
 		},
+    {
+			service: "pagertree",
+			options: client.ServiceTestOptions{},
+			exp: client.ServiceTestResult{
+				Success: false,
+				Message: "service is not enabled",
+			},
+		},
 		{
 			service: "pushover",
 			options: client.ServiceTestOptions{},
@@ -9906,6 +9986,43 @@ func TestServer_AlertHandlers(t *testing.T) {
 					return fmt.Errorf("unexpected pagerduty2 request:\nexp\n%+v\ngot\n%+v\n", exp, got)
 				}
 
+				return nil
+			},
+		},
+    {
+			handler: client.TopicHandler{
+				Kind: "pagertree",
+				Options: map[string]interface{}{
+					"service-key": "service_key",
+				},
+			},
+			setup: func(c *server.Config, ha *client.TopicHandler) (context.Context, error) {
+				ts := pagertreetest.NewServer()
+				ctxt := context.WithValue(nil, "server", ts)
+
+				c.PagerTree.Enabled = true
+				c.PagerTree.URL = ts.URL
+				return ctxt, nil
+			},
+			result: func(ctxt context.Context) error {
+				ts := ctxt.Value("server").(*pagertreetest.Server)
+				kapacitorURL := ctxt.Value("kapacitorURL").(string)
+				ts.Close()
+				got := ts.Requests()
+				exp := []pagertreetest.Request{{
+					URL: "/",
+					PostData: pagertreetest.PostData{
+						ServiceKey:  "service_key",
+						EventType:   "trigger",
+						Description: "message",
+						Client:      "kapacitor",
+						ClientURL:   kapacitorURL,
+						Details:     "details",
+					},
+				}}
+				if !reflect.DeepEqual(exp, got) {
+					return fmt.Errorf("unexpected pagertree request:\nexp\n%+v\ngot\n%+v\n", exp, got)
+				}
 				return nil
 			},
 		},

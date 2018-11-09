@@ -28,6 +28,7 @@ import (
 	"github.com/influxdata/kapacitor/services/opsgenie2"
 	"github.com/influxdata/kapacitor/services/pagerduty"
 	"github.com/influxdata/kapacitor/services/pagerduty2"
+  "github.com/influxdata/kapacitor/services/pagertree"
 	"github.com/influxdata/kapacitor/services/pushover"
 	"github.com/influxdata/kapacitor/services/sensu"
 	"github.com/influxdata/kapacitor/services/sideload"
@@ -573,6 +574,23 @@ func (h *PagerDuty2Handler) WithContext(ctx ...keyvalue.T) pagerduty2.Diagnostic
 }
 
 func (h *PagerDuty2Handler) Error(msg string, err error) {
+	h.l.Error(msg, Error(err))
+}
+
+// PagerTree handler
+type PagerTreeHandler struct {
+	l Logger
+}
+
+func (h *PagerTreeHandler) WithContext(ctx ...keyvalue.T) pagertree.Diagnostic {
+	fields := logFieldsFromContext(ctx)
+
+	return &TreeHandler{
+		l: h.l.With(fields...),
+	}
+}
+
+func (h *PagerTreeHandler) Error(msg string, err error) {
 	h.l.Error(msg, Error(err))
 }
 

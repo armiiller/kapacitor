@@ -26,7 +26,7 @@ func TestPipeline_MarshalJSON(t *testing.T) {
 			var w = stream
 				|from()
 				|window()
-			
+
 			w.period(10s)
 			w.every(1s)`,
 			want: `{
@@ -73,39 +73,39 @@ func TestPipeline_MarshalJSON(t *testing.T) {
 		{
 			name: "chronograf threshold rule",
 			script: `var db = 'telegraf'
-			
+
 			var rp = 'autogen'
-			
+
 			var measurement = 'cpu'
-			
+
 			var groupBy = ['host']
-			
+
 			var whereFilter = lambda: TRUE
-			
+
 			var name = 'Ruley McRuleface'
-			
+
 			var idVar = name + ':{{.Group}}'
-			
+
 			var message = ' {{.ID}} is  {{.Level}}'
-			
+
 			var idTag = 'alertID'
-			
+
 			var levelTag = 'level'
-			
+
 			var messageField = 'message'
-			
+
 			var durationField = 'duration'
-			
+
 			var outputDB = 'chronograf'
-			
+
 			var outputRP = 'autogen'
-			
+
 			var outputMeasurement = 'alerts'
-			
+
 			var triggerType = 'threshold'
-			
+
 			var crit = 90
-			
+
 			var data = stream
 				|from()
 					.database(db)
@@ -115,7 +115,7 @@ func TestPipeline_MarshalJSON(t *testing.T) {
 					.where(whereFilter)
 				|eval(lambda: "usage_system")
 					.as('value')
-			
+
 			var trigger = data
 				|alert()
 					.crit(lambda: "value" > crit)
@@ -127,7 +127,7 @@ func TestPipeline_MarshalJSON(t *testing.T) {
 					.messageField(messageField)
 					.durationField(durationField)
 					.post('http://howdy.local')
-			
+
 			trigger
 				|influxDBOut()
 					.create()
@@ -136,7 +136,7 @@ func TestPipeline_MarshalJSON(t *testing.T) {
 					.measurement(outputMeasurement)
 					.tag('alertName', name)
 					.tag('triggerType', triggerType)
-			
+
 			trigger
 				|httpOut('output')`,
 			want: `{
@@ -247,6 +247,7 @@ func TestPipeline_MarshalJSON(t *testing.T) {
             "victorOps": null,
             "pagerDuty": null,
             "pagerDuty2": null,
+            "pagerTree": null,
             "pushover": null,
             "sensu": null,
             "slack": null,
@@ -659,7 +660,7 @@ func TestPipeline_unmarshalNode(t *testing.T) {
                     "typeOf": "stats",
                     "id": "2",
                     "interval": "5s",
-                    "align": true 
+                    "align": true
                 }`),
 				typ: TypeOf{
 					Type: "stats",
@@ -1000,7 +1001,7 @@ func Test_unmarshalStats(t *testing.T) {
                     "typeOf": "stats",
                     "id": "2",
                     "interval": "5s",
-                    "align": true 
+                    "align": true
                 }`),
 				typ: TypeOf{
 					Type: "stats",

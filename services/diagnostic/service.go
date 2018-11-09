@@ -214,6 +214,12 @@ func (s *Service) NewPagerDuty2Handler() *PagerDuty2Handler {
 	}
 }
 
+func (s *Service) NewPagerTreeHandler() *PagerTreeHandler {
+	return &PagerTreeHandler{
+		l: s.Logger.With(String("service", "pagertree")),
+	}
+}
+
 func (s *Service) NewSMTPHandler() *SMTPHandler {
 	return &SMTPHandler{
 		l: s.Logger.With(String("service", "smtp")),

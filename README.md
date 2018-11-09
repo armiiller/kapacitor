@@ -64,6 +64,9 @@ stream
 
         // PagerDuty
         .pagerDuty()
+
+        // PagerTree
+        .pagerTree()
 ```
 
 Place the above script into a file `cpu_alert.tick` then run these commands to start the task:

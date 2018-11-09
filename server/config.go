@@ -36,6 +36,7 @@ import (
 	"github.com/influxdata/kapacitor/services/opsgenie2"
 	"github.com/influxdata/kapacitor/services/pagerduty"
 	"github.com/influxdata/kapacitor/services/pagerduty2"
+  "github.com/influxdata/kapacitor/services/pagertree"
 	"github.com/influxdata/kapacitor/services/pushover"
 	"github.com/influxdata/kapacitor/services/replay"
 	"github.com/influxdata/kapacitor/services/reporting"
@@ -89,6 +90,7 @@ type Config struct {
 	OpsGenie2  opsgenie2.Config  `toml:"opsgenie2" override:"opsgenie2"`
 	PagerDuty  pagerduty.Config  `toml:"pagerduty" override:"pagerduty"`
 	PagerDuty2 pagerduty2.Config `toml:"pagerduty2" override:"pagerduty2"`
+  PagerTree  pagertree.Config  `toml:"pagertree" override:"pagertree"`
 	Pushover   pushover.Config   `toml:"pushover" override:"pushover"`
 	HTTPPost   httppost.Configs  `toml:"httppost" override:"httppost,element-key=endpoint"`
 	SMTP       smtp.Config       `toml:"smtp" override:"smtp"`
@@ -156,6 +158,7 @@ func NewConfig() *Config {
 	c.OpsGenie2 = opsgenie2.NewConfig()
 	c.PagerDuty = pagerduty.NewConfig()
 	c.PagerDuty2 = pagerduty2.NewConfig()
+  c.PagerTree = pagertree.NewConfig()
 	c.Pushover = pushover.NewConfig()
 	c.HTTPPost = httppost.Configs{httppost.NewConfig()}
 	c.SMTP = smtp.NewConfig()
@@ -283,6 +286,9 @@ func (c *Config) Validate() error {
 	}
 	if err := c.PagerDuty2.Validate(); err != nil {
 		return errors.Wrap(err, "pagerduty2")
+	}
+  if err := c.PagerTree.Validate(); err != nil {
+		return errors.Wrap(err, "pagertree")
 	}
 	if err := c.Pushover.Validate(); err != nil {
 		return errors.Wrap(err, "pushover")

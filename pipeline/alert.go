@@ -1074,12 +1074,10 @@ func (n *AlertNodeData) PagerTree() *PagerTreeHandler {
 }
 
 // tick:embedded:AlertNode.PagerTree
-type PagerTree struct {
+type PagerTreeHandler struct {
 	*AlertNodeData `json:"-"`
 
-	// The routing key to use for the alert.
-	// Defaults to the value in the configuration if empty.
-	RoutingKey string `json:"routingKey"`
+	ServiceKey string `json:"serviceKey"`
 
 	// tick:ignore
 	_ string `tick:"ServiceKey"`

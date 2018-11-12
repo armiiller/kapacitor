@@ -585,7 +585,7 @@ type PagerTreeHandler struct {
 func (h *PagerTreeHandler) WithContext(ctx ...keyvalue.T) pagertree.Diagnostic {
 	fields := logFieldsFromContext(ctx)
 
-	return &TreeHandler{
+	return &PagerTreeHandler{
 		l: h.l.With(fields...),
 	}
 }
